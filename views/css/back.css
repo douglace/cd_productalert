@@ -25,3 +25,81 @@
 * Don't forget to prefix your containers with your own identifier
 * to avoid any conflicts with others containers.
 */
+
+:root {
+    --main-bg-color: #7cd5e7;
+    --main-border-color: #7cd5e7;
+}
+
+.panel.v6-menu-left {
+    padding: 0 !important;
+}
+
+.panel.v6-menu-left ul {
+    padding: 20px 5px;
+    list-style: none;
+}
+
+.panel.v6-menu-left ul li {}
+
+.panel.v6-menu-left ul li a {
+    padding: 8px 10px;
+    color: #202020;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+}
+
+.panel.v6-menu-left ul li a:hover,
+.panel.v6-menu-left ul li.active a,
+.configuration-anchor li a:hover,
+.configuration-anchor li.active a {
+    color: #fff;
+    background-color: var(--main-bg-color);
+    text-decoration: none;
+    border-radius: 5px;
+    border-color: var(--main-border-color);
+}
+
+.v6-tab-item:not(.active),
+.configuration-tab-item:not(.active) {
+    display: none;
+}
+
+.configuration-tab-item.active form {
+    display: block !important;
+}
+
+.v6-tab-item.active {
+    animation-duration: 0.5;
+    animation-name: fadeInLeft;
+    animation-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);
+}
+
+.configuration-anchor {
+    list-style: none;
+    display: flex;
+    gap: 10px;
+    background: #fff;
+    padding: 15px 10px;
+}
+
+.configuration-anchor a {
+    text-decoration: none;
+    color: #202020;
+    padding: 10px;
+}
+
+.configuration-tab-item .chosen-container.chosen-container-multi {
+    min-width: 400px;
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+    to {
+        opacity: 1
+    }
+}

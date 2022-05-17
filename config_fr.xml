@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>cd_productalert</name>
+    <displayName><![CDATA[Alertes produits]]></displayName>
+    <version><![CDATA[1.0.0]]></version>
+    <description><![CDATA[Alertes produits mis en vente]]></description>
+    <author><![CDATA[CleanDev]]></author>
+    <tab><![CDATA[administration]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+	<limited_countries></limited_countries>
+</module>

@@ -23,26 +23,68 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<div class="panel">
-	<h3><i class="icon icon-credit-card"></i> {l s='Alert produit' mod='cd_productalert'}</h3>
-	<p>
-		<strong>{l s='Here is my new generic module!' mod='cd_productalert'}</strong><br />
-		{l s='Thanks to PrestaShop, now I have a great module.' mod='cd_productalert'}<br />
-		{l s='I can configure it using the following configuration form.' mod='cd_productalert'}
-	</p>
-	<br />
-	<p>
-		{l s='This module will boost your sales!' mod='cd_productalert'}
-	</p>
-</div>
 
-<div class="panel">
-	<h3><i class="icon icon-tags"></i> {l s='Documentation' mod='cd_productalert'}</h3>
-	<p>
-		&raquo; {l s='You can get a PDF documentation to configure this module' mod='cd_productalert'} :
-		<ul>
-			<li><a href="#" target="_blank">{l s='English' mod='cd_productalert'}</a></li>
-			<li><a href="#" target="_blank">{l s='French' mod='cd_productalert'}</a></li>
-		</ul>
-	</p>
+
+<div class="row">
+	<div class="col-md-9">
+		<div class="v6-tab-item " id="v6-documentation">
+			<div class="panel">
+				<h3><i class="icon icon-tags"></i> {l s='Documentation' mod='kreabelhome'}</h3>
+				<p>
+					&raquo; {l s='You can get a PDF documentation to configure this module' mod='kreabelhome'} :
+					<ul>
+						<li><a href="{$module_dir|escape:'htmlall':'UTF-8'}docs/readme_en.pdf" target="_blank">{l s='English' mod='kreabelhome'}</a></li>
+						<li><a href="{$module_dir|escape:'htmlall':'UTF-8'}docs/readme_fr.pdf" target="_blank">{l s='French' mod='kreabelhome'}</a></li>
+					</ul>
+				</p>
+			</div>
+		</div>
+		<div class="v6-tab-item" id="v6-description">
+			<div class="panel">
+				<h3><i class="icon icon-credit-card"></i> {l s='Description' mod='kreabelhome'}</h3>
+				<p>
+					<strong>{l s='Customer testimonies' mod='kreabelhome'}</strong><br />
+					{l s='This testimonials module allows you to display customer reviews on pages such as the home page, the shopping cart page, the product page and a dedicated page to access all customer reviews on a given product.' mod='kreabelhome'}<br />
+					{l s='I can configure it using the following configuration form.' mod='kreabelhome'}
+				</p>
+				<br />
+				<p>
+					{l s='This module will boost your sales, by encouraging your customers to pay attention to certain products!' mod='kreabelhome'}
+				</p>
+			</div>
+		</div>
+		<div class="v6-tab-item active" id="v6-configurations">
+			<div class="configuration-tabs">
+				<ul class="configuration-anchor">
+					<li class="active"> <a href="#config-form" data-id="config-form">{l s='Configurations' mod='cd_productalert'}</a> </li>
+				</ul>
+				<div class="configuration-tab-item active" id="config-form">
+					{$form}
+				</div>
+			</div>
+		</div>
+
+		
+	</div>
+	<div class="col-md-2">
+		<div class="panel v6-menu-left">
+			<ul class="">
+				<li >
+					<a href="#v6-documentation" data-id="v6-documentation">
+						<i class="icon icon-tags"></i> {l s='Documentation' mod='kreabelhome'}
+					</a>
+				</li>
+				<li >
+					<a href="#v6-description" data-id="v6-description">
+						<i class="icon icon-tags"></i> {l s='Description' mod='kreabelhome'}
+					</a>
+				</li>
+				<li class="active">
+					<a href="#v6-configurations" data-id="v6-configurations">
+						<i class="icon icon-cogs"></i> {l s='Congirurations' mod='kreabelhome'}
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
 </div>

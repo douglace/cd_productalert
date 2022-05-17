@@ -6,5 +6,5 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Acer\\CdProductalert\\' => array($baseDir . '/src'),
+    'Vex6\\CdProductalert\\' => array($baseDir . '/src'),
 );

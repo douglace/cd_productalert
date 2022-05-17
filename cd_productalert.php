@@ -24,13 +24,29 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+use Vex6\CdProductalert\Classes\Alert;
+
 if (!defined('_PS_VERSION_')) {
     exit;
+}
+
+if (file_exists(_PS_MODULE_DIR_. 'cd_productalert/vendor/autoload.php')) {
+    require_once _PS_MODULE_DIR_.  'cd_productalert/vendor/autoload.php';
 }
 
 class Cd_productalert extends Module
 {
     protected $config_form = false;
+
+    /**
+     * @param array $tabs
+     */
+    public $tabs;
+
+    /**
+     * @param Vex6\CdProductalert\Repository $repository
+     */
+    protected $repository;
 
     public function __construct()
     {
@@ -45,10 +61,24 @@ class Cd_productalert extends Module
          */
         $this->bootstrap = true;
 
-        parent::__construct();
+        $this->tabs = array(
+            array(
+                'name'=> $this->l('Alert clients'),
+                'class_name'=>'AdminCdCustomerAlert',
+                'parent'=>'AdminParentModulesSf',
+            ),
+            array(
+                'name'=> $this->l('Alert'),
+                'class_name'=>'AdminCdAlerts',
+                'parent'=>'AdminCdCustomerAlert',
+            )
+        );
 
-        $this->displayName = $this->l('Alert produit');
-        $this->description = $this->l('Alert produit mise en vente');
+        $this->repository = new Vex6\CdProductalert\Repository($this); 
+        parent::__construct();
+        
+        $this->displayName = $this->l('Alertes produits');
+        $this->description = $this->l('Alertes produits mis en vente');
 
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
     }
@@ -59,18 +89,12 @@ class Cd_productalert extends Module
      */
     public function install()
     {
-        Configuration::updateValue('CD_PRODUCTALERT_LIVE_MODE', false);
-
-        return parent::install() &&
-            $this->registerHook('header') &&
-            $this->registerHook('backOfficeHeader');
+        return parent::install() && $this->repository->install();
     }
 
     public function uninstall()
     {
-        Configuration::deleteByName('CD_PRODUCTALERT_LIVE_MODE');
-
-        return parent::uninstall();
+        return parent::uninstall() && $this->repository->uninstall();
     }
 
     /**
@@ -78,110 +102,116 @@ class Cd_productalert extends Module
      */
     public function getContent()
     {
-        /**
-         * If values have been submitted in the form, process.
-         */
-        if (((bool)Tools::isSubmit('submitCd_productalertModule')) == true) {
-            $this->postProcess();
-        }
+        $process = $this->postProcess();
 
-        $this->context->smarty->assign('module_dir', $this->_path);
-
-        $output = $this->context->smarty->fetch($this->local_path.'views/templates/admin/configure.tpl');
-
-        return $output.$this->renderForm();
-    }
-
-    /**
-     * Create the form that will be displayed in the configuration of your module.
-     */
-    protected function renderForm()
-    {
-        $helper = new HelperForm();
-
-        $helper->show_toolbar = false;
-        $helper->table = $this->table;
-        $helper->module = $this;
-        $helper->default_form_language = $this->context->language->id;
-        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG', 0);
-
-        $helper->identifier = $this->identifier;
-        $helper->submit_action = 'submitCd_productalertModule';
-        $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false)
-            .'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name;
-        $helper->token = Tools::getAdminTokenLite('AdminModules');
-
-        $helper->tpl_vars = array(
-            'fields_value' => $this->getConfigFormValues(), /* Add values for your inputs */
-            'languages' => $this->context->controller->getLanguages(),
-            'id_language' => $this->context->language->id,
+        $this->context->smarty->assign(
+            array(
+                'module_dir' => $this->_path,
+                'config_form' => $this->config_form,
+                'form' => $this->renderConfigForm(),
+            )
         );
+        return $process.$this->context->smarty->fetch($this->local_path.'views/templates/admin/configure.tpl');
+    }
+    
+    /**
+     * Retourne les caractéristiques de la boutiques
+     * @param int $id_lang
+     * @return []
+     */
+    public function getFeatures($id_lang = null) {
+        $id_lang = $id_lang ? $id_lang : Context::getContext()->language->id;
+        $q = new DbQuery();
+        $q->select('id_feature id, name')
+        ->from('feature_lang')
+        ->where('id_lang='.$id_lang);
 
-        return $helper->generateForm(array($this->getConfigForm()));
+        return Db::getInstance()->executeS($q);
     }
 
     /**
-     * Create the structure of your form.
+     * Retourne les caractéristiques de la boutiques
+     * @param int $id_lang
+     * @return []
      */
-    protected function getConfigForm()
-    {
-        return array(
-            'form' => array(
-                'legend' => array(
-                'title' => $this->l('Settings'),
+    public function getAttributes($id_lang = null) {
+        $id_lang = $id_lang ? $id_lang : Context::getContext()->language->id;
+        $q = new DbQuery();
+        $q->select('id_attribute id, name')
+        ->from('attribute_lang')
+        ->where('id_lang='.$id_lang);
+
+        return Db::getInstance()->executeS($q);
+    }
+
+    public function renderConfigForm() {
+        $form = new Vex6\CdProductalert\Utils\FormForm($this);
+        $form->setShowToolbar(false)
+            ->setTable($this->table)
+            ->setModule($this)
+            ->setDefaultFromLanguage($this->context->language->id)
+            ->setAllowEmployeFromLang(Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG', 0))
+            ->setIdentifier($this->identifier)
+            ->setSubmitAction('submitCdProductAlertConfig')
+            ->setCurrentIndex($this->context->link->getAdminLink('AdminModules', false)
+            .'&configure='.$this->name.'&tab_module='.$this->tab.'&module_name='.$this->name)
+            ->setToken(Tools::getAdminTokenLite('AdminModules'))
+            ->setTplVar([
+                'fields_value' => $this->getConfigFormValues(), /* Add values for your inputs */
+                'languages' => $this->context->controller->getLanguages(),
+                'id_language' => $this->context->language->id,
+            ])
+            ->addField(
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('liste des caractéristiques du formulaires'),
+                    'desc' => $this->l('laissez vide pour autoriser tous les caractéristiques'),
+                    'name' => 'CD_PRODUCT_ALERT_FEATURES[]',
+                    'class' => 'chosen',
+                    'multiple' => true,
+                    'options' => [
+                        'query'=>$this->getFeatures(),
+                        'id'=>'id',
+                        'name'=>'name',
+                    ],
+                )
+            )->addField(
+                array(
+                    'type' => 'select',
+                    'label' => $this->l('liste des attributs du formulaires'),
+                    'desc' => $this->l('laissez vide pour autoriser tous les attributs'),
+                    'name' => 'CD_PRODUCT_ALERT_ATTRIBUTES[]',
+                    'class' => 'chosen',
+                    'multiple' => true,
+                    'options' => [
+                        'query'=>$this->getAttributes(),
+                        'id'=>'id',
+                        'name'=>'name',
+                    ],
+                )
+            )
+            ->setLegend([
+                'title' => $this->l('Forumulaires'),
                 'icon' => 'icon-cogs',
-                ),
-                'input' => array(
-                    array(
-                        'type' => 'switch',
-                        'label' => $this->l('Live mode'),
-                        'name' => 'CD_PRODUCTALERT_LIVE_MODE',
-                        'is_bool' => true,
-                        'desc' => $this->l('Use this module in live mode'),
-                        'values' => array(
-                            array(
-                                'id' => 'active_on',
-                                'value' => true,
-                                'label' => $this->l('Enabled')
-                            ),
-                            array(
-                                'id' => 'active_off',
-                                'value' => false,
-                                'label' => $this->l('Disabled')
-                            )
-                        ),
-                    ),
-                    array(
-                        'col' => 3,
-                        'type' => 'text',
-                        'prefix' => '<i class="icon icon-envelope"></i>',
-                        'desc' => $this->l('Enter a valid email address'),
-                        'name' => 'CD_PRODUCTALERT_ACCOUNT_EMAIL',
-                        'label' => $this->l('Email'),
-                    ),
-                    array(
-                        'type' => 'password',
-                        'name' => 'CD_PRODUCTALERT_ACCOUNT_PASSWORD',
-                        'label' => $this->l('Password'),
-                    ),
-                ),
-                'submit' => array(
-                    'title' => $this->l('Save'),
-                ),
-            ),
-        );
+            ])->setSubmit([
+                'title' => $this->l('Save'),
+            ])
+        ;
+        return $form->make();
     }
 
+    
     /**
      * Set values for the inputs.
      */
     protected function getConfigFormValues()
     {
-        return array(
-            'CD_PRODUCTALERT_LIVE_MODE' => Configuration::get('CD_PRODUCTALERT_LIVE_MODE', true),
-            'CD_PRODUCTALERT_ACCOUNT_EMAIL' => Configuration::get('CD_PRODUCTALERT_ACCOUNT_EMAIL', 'contact@prestashop.com'),
-            'CD_PRODUCTALERT_ACCOUNT_PASSWORD' => Configuration::get('CD_PRODUCTALERT_ACCOUNT_PASSWORD', null),
+        $data =  array(
+            'CD_PRODUCT_ALERT_FEATURES[]'=> explode(',', Configuration::get('CD_PRODUCT_ALERT_FEATURES')),
+            'CD_PRODUCT_ALERT_ATTRIBUTES[]'=> explode(',', Configuration::get('CD_PRODUCT_ALERT_ATTRIBUTES')),
         );
+        
+        return $data;
     }
 
     /**
@@ -189,10 +219,36 @@ class Cd_productalert extends Module
      */
     protected function postProcess()
     {
-        $form_values = $this->getConfigFormValues();
-
-        foreach (array_keys($form_values) as $key) {
-            Configuration::updateValue($key, Tools::getValue($key));
+        $form_values = [];
+        $implodes = array(
+            'CD_PRODUCT_ALERT_FEATURES[]',
+            'CD_PRODUCT_ALERT_ATTRIBUTES[]'
+        );
+        if(Tools::isSubmit('submitCdProductAlertConfig')) {
+            $form_values = $this->getConfigFormValues();
+        }
+        if(!empty($form_values)) {
+            try{
+                foreach (array_keys($form_values) as $key) {
+                    if(in_array($key, $implodes)) {
+                        $true_key = rtrim($key, '[]');
+                        $v = implode(',', Tools::getValue($true_key));
+                        if($v) {
+                            Configuration::updateValue($true_key,  $v);
+                        }
+                    } else {
+                        Configuration::updateValue($key, Tools::getValue($key));
+                    }
+                }
+                
+                if(!empty($this->_errors)) {
+                    return $this->displayError(current($this->_errors));
+                }
+                return $this->displayConfirmation($this->l('Configuration save with success'));
+            
+            }catch(Exception $e){
+                return $this->displayError($this->l('Something when wrong'));
+            }
         }
     }
 
@@ -201,7 +257,8 @@ class Cd_productalert extends Module
     */
     public function hookBackOfficeHeader()
     {
-        if (Tools::getValue('module_name') == $this->name) {
+        
+        if (Tools::getValue('configure') == $this->name) {
             $this->context->controller->addJS($this->_path.'views/js/back.js');
             $this->context->controller->addCSS($this->_path.'views/css/back.css');
         }
