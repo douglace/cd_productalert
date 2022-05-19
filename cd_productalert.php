@@ -396,7 +396,39 @@ class Cd_productalert extends Module
     }
 
     public function hookActionProductSave($params) {
-        dump($params);
-        die;
+        $alerts = Alert::findAlerts($params['id_product']);
+        
+        $combinations = $params['product']->getAttributeCombinations();
+        $attribute_combinations = [];
+
+        if($combinations && !empty($combinations)) {
+            foreach($combinations as $combination) {
+                if(!isset($attribute_combinations[$combination['id_product_attribute']])) {
+                    $attribute_combinations[$combination['id_product_attribute']] = [];
+                }
+                $attribute_combinations[$combination['id_product_attribute']][]=$combination['id_attribute'];
+            }
+        }
+        $data = [];
+        if(!empty($alerts) && $alerts) {
+            foreach($alerts as $alert) {
+                $id_product_attribute = 0;
+                if(!empty($alert['attributes'])) {
+                    foreach($attribute_combinations as $k=>$v) {
+                        if($id_product_attribute == 0 && array_count_values($alert['attributes']) == array_count_values($v)) {
+                            $id_product_attribute = (int)$k;
+                        }
+                    }
+                }
+                $data[] = [
+                    'id_cd_alert' => $alert['id_cd_alert'],
+                    'id_product' => $params['id_product'],
+                    'id_product_attribute' => $id_product_attribute,
+                    'is_alerted' => 0,
+                ];
+            }
+        }
+        if($data && !empty($data)) 
+            Alert::addNotifications($data);
     }
 }

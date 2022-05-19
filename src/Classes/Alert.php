@@ -179,7 +179,7 @@ class Alert
     /**
      * Cherche tous les client à notifier
      * @param int
-     * @return boolean
+     * @return array|null
      */
     public static function findAlerts($id_product){
         $attributes = self::getProductAttributes($id_product);
@@ -189,36 +189,51 @@ class Alert
         $q = new DbQuery();
         $q->select('a.id_customer, a.id_cd_alert, a.alert_name')
         ->where('a.active=0')
-        ->from('cd_alert', 'a');
+        ->from('cd_alert', 'a')
+        ->groupBy('a.id_cd_alert');
 
         if(!empty($attributes) && $attributes) {
             $q->innerJoin('cd_alert_attribut', 'aa', 'aa.id_cd_alert=a.id_cd_alert')
             ->where('aa.id_attribut in ('.implode(',', $attributes).')');
+        } else {
+            $q->where('NOT EXISTS(SELECT 1 FROM `'._DB_PREFIX_.'cd_alert_attribut` aa WHERE aa.id_cd_alert=a.id_cd_alert )');
         }
 
         if(!empty($features) && $features) {
             $q->innerJoin('cd_alert_feature', 'af', 'af.id_cd_alert=a.id_cd_alert')
             ->where('af.id_feature in ('.implode(',', $features).')');
+        }else {
+            $q->where('NOT EXISTS(SELECT 1 FROM `'._DB_PREFIX_.'cd_alert_feature` af WHERE af.id_cd_alert=a.id_cd_alert )');
         }
 
         if(!empty($id_supplier) && $id_supplier) {
-            $q->innerJoin('cd_alert_supplier', 'as', 'as.id_cd_alert=a.id_cd_alert')
-            ->where('as.id_supplier='.$id_supplier);
+            $q->where('a.id_supplier='.$id_supplier);
+        } else {
+            $q->where('a.id_supplier = 0 OR a.id_supplier IS NULL');
         }
 
         if(!empty($id_manufacturer) && $id_manufacturer) {
-            $q->innerJoin('cd_alert_brand', 'am', 'am.id_cd_alert=a.id_cd_alert')
-            ->where('am.id_brand='.$id_manufacturer);
+            $q->where('a.id_manufacturer='.$id_manufacturer);
+        } else {
+            $q->where('a.id_manufacturer = 0 OR a.id_manufacturer IS NULL');
         }
 
-        return Db::getInstance()->executeS($q);
+        return array_map(function($a){
+            $a['attributes'] = array_map(function($b){
+                return $b['id_attribut'];
+            }, self::getAttributes($a['id_cd_alert']));
+            $a['features'] = array_map(function($b){
+                return $b['id_feature'];
+            }, self::getFeatures($a['id_cd_alert']));
+            return $a;
+        }, Db::getInstance()->executeS($q));
     }
 
     /**
      * Retourne tous les attribut d'un produit donné
      * @return null|[]
      */
-    private static function getProductAttributes($id_product) {
+    public static function getProductAttributes($id_product) {
         $q = new DbQuery();
         $q->select('a.id_attribute')
         ->from('product_attribute_combination', 'a')
@@ -233,7 +248,7 @@ class Alert
      * Retourne tous les caractéristique d'un produit donné
      * @return null|[]
      */
-    private static function getProductFeautures($id_product) {
+    public static function getProductFeautures($id_product) {
         $q = new DbQuery();
         $q->select('id_feature')
         ->from('feature_product')
@@ -267,5 +282,13 @@ class Alert
         return (int)Db::getInstance()->getValue($q);
     }
 
-    
+    public static function addNotifications($data) {
+        return Db::getInstance()->insert(
+            'cd_alert_alerted',
+            $data,
+            false,
+            true, Db::REPLACE
+        );
+    }
+
 }

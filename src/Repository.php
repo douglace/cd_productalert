@@ -143,6 +143,7 @@ class Repository
             `id_cd_alert` INT(11) NOT NULL,
             `id_product` INT(11) NOT NULL,
             `id_product_attribute` INT(11) NOT NULL,
+            `is_alerted` INT(1) NOT NULL DEFAULT 0,
             `count_notification` INT(10) DEFAULT 0,
             `date_add` DATETIME DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (`id_cd_alert`, `id_product`, `id_product_attribute`)
