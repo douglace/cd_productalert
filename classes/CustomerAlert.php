@@ -30,7 +30,25 @@ class CustomerAlert extends ObjectModel
      * Client
      * @param int $id_customer
      */
-    public $id_customer  = 0;
+    public $id_customer = 0;
+
+    /**
+     * Currency
+     * @param int $id_currency
+     */
+    public $id_currency = 0;
+
+    /**
+     * Manufacture
+     * @param int $id_manufacturer
+     */
+    public $id_manufacturer = 0;
+
+    /**
+     * Supplier
+     * @param int $id_supplier
+     */
+    public $id_supplier = 0;
     
 
     /**
@@ -41,9 +59,21 @@ class CustomerAlert extends ObjectModel
 
     /**
      * Alert name
-     * @param int $alert_name
+     * @param string $alert_name
      */
     public $alert_name;
+
+    /**
+     * Alert price
+     * @param float $alert_price
+     */
+    public $alert_price;
+
+    /**
+     * Date d'ajout
+     * @param string $date_add
+     */
+    public $date_add;
 
     /**
      * @see ObjectModel::$definition
@@ -56,13 +86,31 @@ class CustomerAlert extends ObjectModel
                 'type' => self::TYPE_INT,
                 'validate' => 'isInt'
             ),
+            'id_currency' => array(
+                'type' => self::TYPE_INT,
+                'validate' => 'isInt'
+            ),
+            'id_supplier' => array(
+                'type' => self::TYPE_INT,
+                'validate' => 'isInt'
+            ),
+            'id_manufacturer' => array(
+                'type' => self::TYPE_INT,
+                'validate' => 'isInt'
+            ),
             'active' => array(
                 'type' => self::TYPE_BOOL
             ),
+            'date_add' => array(
+                'type' => self::TYPE_DATE
+            ),
             'alert_name' => array(
                 'type' => self::TYPE_STRING,
-                'lang' => true,
                 'validate' => 'isString'
+            ),
+            'alert_price' => array(
+                'type' => self::TYPE_FLOAT,
+                'validate' => 'isFloat'
             )
         ),
     );

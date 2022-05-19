@@ -119,8 +119,11 @@ class Repository
         $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'cd_alert` (
             `id_cd_alert` INT(11) NOT NULL AUTO_INCREMENT,
             `id_customer` INT(11) UNSIGNED NOT NULL,
+            `id_curency` INT(11) UNSIGNED NULL,
             `alert_name` VARCHAR(200),
+            `alert_price` DECIMAL(20,6),
             `active` INT(1) DEFAULT 0,
+            `date_add` DATETIME DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY  (`id_cd_alert`)
         ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
 
@@ -136,16 +139,13 @@ class Repository
             PRIMARY KEY  (`id_cd_alert`, `id_feature`)
         ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
 
-        $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'cd_alert_brand` (
+        $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'cd_alert_alerted` (
             `id_cd_alert` INT(11) NOT NULL,
-            `id_brand` INT(11) NOT NULL,
-            PRIMARY KEY  (`id_cd_alert`, `id_brand`)
-        ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
-
-        $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'cd_alert_supplier` (
-            `id_cd_alert` INT(11) NOT NULL,
-            `id_supplier` INT(11) NOT NULL,
-            PRIMARY KEY  (`id_cd_alert`, `id_supplier`)
+            `id_product` INT(11) NOT NULL,
+            `id_product_attribute` INT(11) NOT NULL,
+            `count_notification` INT(10) DEFAULT 0,
+            `date_add` DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (`id_cd_alert`, `id_product`, `id_product_attribute`)
         ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
         
         foreach ($sql as $query) {
@@ -184,6 +184,13 @@ class Repository
     protected function registerHooks()
     {
         return $this->module->registerHook('header') &&
+            $this->module->registerHook('displayCustomerAccount') &&
+            $this->module->registerHook('displayProductActions') &&
+            $this->module->registerHook('displayFooterCategory') &&
+            $this->module->registerHook('displayHeaderCategory') &&
+            $this->module->registerHook('displayOrderConfirmation1') &&
+            $this->module->registerHook('displayOrderConfirmation2') &&
+            $this->module->registerHook('actionProductSave') &&
             $this->module->registerHook('backOfficeHeader')
         ;
     }

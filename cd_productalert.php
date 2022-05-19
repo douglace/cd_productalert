@@ -48,6 +48,11 @@ class Cd_productalert extends Module
      */
     protected $repository;
 
+    /**
+     * @param array $languages
+     */
+    protected $languages;
+
     public function __construct()
     {
         $this->name = 'cd_productalert';
@@ -76,10 +81,10 @@ class Cd_productalert extends Module
 
         $this->repository = new Vex6\CdProductalert\Repository($this); 
         parent::__construct();
-        
+        $this->languages = Language::getLanguages();
         $this->displayName = $this->l('Alertes produits');
         $this->description = $this->l('Alertes produits mis en vente');
-
+        
         $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
     }
 
@@ -137,8 +142,8 @@ class Cd_productalert extends Module
     public function getAttributes($id_lang = null) {
         $id_lang = $id_lang ? $id_lang : Context::getContext()->language->id;
         $q = new DbQuery();
-        $q->select('id_attribute id, name')
-        ->from('attribute_lang')
+        $q->select('id_attribute_group id, name')
+        ->from('attribute_group_lang')
         ->where('id_lang='.$id_lang);
 
         return Db::getInstance()->executeS($q);
@@ -160,12 +165,26 @@ class Cd_productalert extends Module
                 'fields_value' => $this->getConfigFormValues(), /* Add values for your inputs */
                 'languages' => $this->context->controller->getLanguages(),
                 'id_language' => $this->context->language->id,
-            ])
+            ])->addField(
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Définissez une email de copie'),
+                    'name' => 'CD_PRODUCT_ALERT_EMAIL_COPIE',
+                )
+            )
+            ->addField(
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Titre de la page'),
+                    'name' => 'CD_PRODUCT_ALERT_TITLE_PAGE',
+                    'lang' => true,
+                )
+            )
             ->addField(
                 array(
                     'type' => 'select',
                     'label' => $this->l('liste des caractéristiques du formulaires'),
-                    'desc' => $this->l('laissez vide pour autoriser tous les caractéristiques'),
+                    //'desc' => $this->l('laissez vide pour autoriser tous les caractéristiques'),
                     'name' => 'CD_PRODUCT_ALERT_FEATURES[]',
                     'class' => 'chosen',
                     'multiple' => true,
@@ -179,7 +198,7 @@ class Cd_productalert extends Module
                 array(
                     'type' => 'select',
                     'label' => $this->l('liste des attributs du formulaires'),
-                    'desc' => $this->l('laissez vide pour autoriser tous les attributs'),
+                    //'desc' => $this->l('laissez vide pour autoriser tous les attributs'),
                     'name' => 'CD_PRODUCT_ALERT_ATTRIBUTES[]',
                     'class' => 'chosen',
                     'multiple' => true,
@@ -188,6 +207,45 @@ class Cd_productalert extends Module
                         'id'=>'id',
                         'name'=>'name',
                     ],
+                )
+            )->addField(
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Afficher les fournisseurs dans le formulaire'),
+                    'name' => 'CD_PRODUCT_ALERT_DISPLAY_SUPPLIER',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
+                )
+            )
+            ->addField(
+                array(
+                    'type' => 'switch',
+                    'label' => $this->l('Afficher les marques dans le formulaire'),
+                    'name' => 'CD_PRODUCT_ALERT_DISPLAY_MANUFACTURER',
+                    'is_bool' => true,
+                    'values' => array(
+                        array(
+                            'id' => 'active_on',
+                            'value' => true,
+                            'label' => $this->l('Enabled')
+                        ),
+                        array(
+                            'id' => 'active_off',
+                            'value' => false,
+                            'label' => $this->l('Disabled')
+                        )
+                    ),
                 )
             )
             ->setLegend([
@@ -207,9 +265,19 @@ class Cd_productalert extends Module
     protected function getConfigFormValues()
     {
         $data =  array(
+            'CD_PRODUCT_ALERT_EMAIL_COPIE'=> Configuration::get('CD_PRODUCT_ALERT_EMAIL_COPIE'),
+            'CD_PRODUCT_ALERT_DISPLAY_SUPPLIER' => Configuration::get('CD_PRODUCT_ALERT_DISPLAY_SUPPLIER'),
+            'CD_PRODUCT_ALERT_DISPLAY_MANUFACTURER' =>  Configuration::get('CD_PRODUCT_ALERT_DISPLAY_MANUFACTURER'),
             'CD_PRODUCT_ALERT_FEATURES[]'=> explode(',', Configuration::get('CD_PRODUCT_ALERT_FEATURES')),
             'CD_PRODUCT_ALERT_ATTRIBUTES[]'=> explode(',', Configuration::get('CD_PRODUCT_ALERT_ATTRIBUTES')),
         );
+
+        foreach ($this->languages as $language) {
+            
+            $data['CD_PRODUCT_ALERT_TITLE_PAGE'][$language['id_lang']] =
+             Configuration::get('CD_PRODUCT_ALERT_TITLE_PAGE', $language['id_lang']);
+        }
+
         
         return $data;
     }
@@ -224,13 +292,28 @@ class Cd_productalert extends Module
             'CD_PRODUCT_ALERT_FEATURES[]',
             'CD_PRODUCT_ALERT_ATTRIBUTES[]'
         );
+        $multilang = array(
+            'CD_PRODUCT_ALERT_TITLE_PAGE',
+        );
         if(Tools::isSubmit('submitCdProductAlertConfig')) {
             $form_values = $this->getConfigFormValues();
         }
         if(!empty($form_values)) {
             try{
+                $values = [];
+                if(!empty($multilang)) {
+                    foreach($multilang as $k) {
+                        foreach($this->languages as $l) {
+                            $values[$k][$l['id_lang']] = Tools::getValue($k."_".$l['id_lang']);
+                        }
+                    }
+                }
                 foreach (array_keys($form_values) as $key) {
-                    if(in_array($key, $implodes)) {
+                    if(in_array($key, $multilang)) {
+                        if(isset($values[$key])) {
+                            Configuration::updateValue($key, $values[$key]);
+                        }
+                    } elseif(in_array($key, $implodes)) {
                         $true_key = rtrim($key, '[]');
                         $v = implode(',', Tools::getValue($true_key));
                         if($v) {
@@ -271,5 +354,49 @@ class Cd_productalert extends Module
     {
         $this->context->controller->addJS($this->_path.'/views/js/front.js');
         $this->context->controller->addCSS($this->_path.'/views/css/front.css');
+    }
+
+    public function hookDisplayCustomerAccount() {
+        $this->context->smarty->assign(array(
+            'alert_link' => $this->context->link->getModuleLink($this->name, 'list')
+        ));
+        return $this->fetch('module:'.$this->name.'/views/templates/hook/accountaction.tpl');
+    }
+
+    public function hookDisplayProductActions(){
+        $this->context->smarty->assign(array(
+            'alert_link'=>$this->context->link->getModuleLink($this->name, 'alert'),
+        ));
+        return $this->fetch('module:'.$this->name.'/views/templates/hook/action.tpl');
+    }
+
+    public function hookDisplayFooterCategory($params){
+        if(Tools::getValue('controller') == "manufacturer") {
+            $alert_link = $this->context->link->getModuleLink($this->name, 'alert', ['ref_fabricant'=>Tools::getValue('id_manufacturer')]);
+        } else {
+            $alert_link = $this->context->link->getModuleLink($this->name, 'alert');
+        }
+        $this->context->smarty->assign(array(
+            'alert_link'=>$alert_link,
+        ));
+        return $this->fetch('module:'.$this->name.'/views/templates/hook/action.tpl');
+    
+    }
+
+    public function hookDisplayHeaderCategory($params){
+        return $this->hookDisplayFooterCategory($params);
+    }
+
+    public function hookDisplayOrderConfirmation1($params) {
+        return $this->hookDisplayFooterCategory($params);
+    }
+
+    public function hookDisplayOrderConfirmation2($params) {
+        return $this->hookDisplayFooterCategory($params);
+    }
+
+    public function hookActionProductSave($params) {
+        dump($params);
+        die;
     }
 }

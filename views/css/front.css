@@ -25,3 +25,32 @@
 * Don't forget to prefix your containers with your own identifier
 * to avoid any conflicts with others containers.
 */
+
+.text-center {
+    text-align: center;
+}
+
+.alerts {
+    margin-top: 20px;
+}
+
+.alerts .alert {
+    background-color: #fff;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.add-alert {
+    background-color: #fff;
+    padding: 10px;
+    border-radius: 50%;
+    float: right;
+    box-shadow: 1px 2px 5px rgba(20, 20, 20, .5);
+}
+
+.alert-item-table {
+    background-color: #fff;
+    border-color: black;
+    border-width: 2px;
+}

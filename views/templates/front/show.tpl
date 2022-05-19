@@ -1,0 +1,73 @@
+{extends file='page.tpl'}
+
+{block name="page_title"}
+    {$alert->alert_name|escape:'htmlall':'UTF-8'}
+{/block}
+{block name="page_content_container"}
+    <section class="alert-item" id="alert-{$alert->id}">
+
+        <div class="row">
+            <div class="col-md-6 col-xs-12">
+                <p>
+                    <a class="show-alert text-muted" href={$alert_link}>
+                        <i class="material-icons">arrow_left</i>
+                        {l s="Afficher mes alertes" d="Modules.Cdproductalert.show"}
+                    </a>
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-xs-12">
+                <table class="alert-item-table table table-bordered table-hover">
+                        <thead>
+                            <tr class="">
+                                <td>
+                                    <a class="link text-warning" href="{$edit_link}">
+                                        <i class="material-icons">edit</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        </thead>
+                    {if isset($alert->attributes) && !empty($alert->attributes) && $alert->attributes}
+                        {foreach from=$alert->attributes item=attribute}
+                            <tr>
+                                <th>{$attribute.group->name}</th>
+                                <td>{$attribute.attribute->name}</td>
+                            </tr>
+                        {/foreach}
+                    {/if}
+
+                    {if isset($alert->features) && !empty($alert->features)}
+                        {foreach from=$alert->features item=feature}
+                            <tr>
+                                <th>{$feature.feature->name}</th>
+                                <td>{$feature.value->value}</td>
+                            </tr>
+                        {/foreach}
+                    {/if}
+                    {if isset($alert->supplier) && $alert->supplier->id}
+                        <tr>
+                            <th>{l s="Fournisseur" d="Modules.Cdproductalert.show"}</th>
+                            <td>{$alert->supplier->name}</td>
+                        </tr>
+                    {/if}
+                    {if isset($alert->manufacturer) && $alert->manufacturer->id}
+                        <tr>
+                            <th>{l s="Marque" d="Modules.Cdproductalert.show"}</th>
+                            <td>{$alert->manufacturer->name}</td>
+                        </tr>
+                    {/if}
+                    {if isset($alert->alert_price) && $alert->alert_price}
+                        <tr>
+                            <th>{l s="Votre budget" d="Modules.Cdproductalert.show"}</th>
+                            <td>{$alert->price|escape:'htmlall':'UTF-8'}</td>
+                        </tr>
+                    {/if}
+                </table>
+            </div>
+            <div class="col-md-6 col-xs-12">
+                <p class="alert__found-title">{l s='Product similar' d="Modules.Cdproductalert.show"}</p>
+            </div>
+        </div>
+    </section>
+{/block}

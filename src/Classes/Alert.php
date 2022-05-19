@@ -43,21 +43,85 @@ class Alert
      */
     public static function getCustomerAlerts($id_customer, $full = false) {
         $q = new DbQuery();
-        $q->select('id_cd_alert, alert_name')
-            ->from('cd_alert')
-            ->where('id_customer='.$id_customer);
+        $q->select('a.*')
+            ->from('cd_alert', 'a')
+            ->where('a.id_customer='.$id_customer);
 
+        $alerts = array_map(function($a){
+            $a['link'] = Context::getContext()->link->getModuleLink('cd_productalert', 'list', ['id_alert'=>$a['id_cd_alert']]);
+            $a['edit_link'] = Context::getContext()->link->getModuleLink('cd_productalert', 'alert', ['id_alert'=>$a['id_cd_alert']]);
+            $a['delete_link'] = Context::getContext()->link->getModuleLink('cd_productalert', 'alert', ['id_alert'=>$a['id_cd_alert'], 'delete'=>1]);
+            $a['price'] = \Tools::displayPrice($a['alert_price'], ($a['id_currency'] ? (int)$a['id_currency'] : null));
+            return $a;
+        }, Db::getInstance()->executeS($q));
         if($full) {
             return array_map(function($a){
                 $a['attributes'] = Alert::getAttributes($a['id_cd_alert']);
                 $a['features'] = Alert::getFeatures($a['id_cd_alert']);
                 $a['brands'] = Alert::getBrands($a['id_cd_alert']);
                 $a['suppliers'] = Alert::getSuppliers($a['id_cd_alert']);
+                
                 return $a;
-            }, Db::getInstance()->executeS($q));
+            }, $alerts);
         }
 
-        return Db::getInstance()->executeS($q);
+        return $alerts;
+    }
+
+    /**
+     * @param int $id_alert
+     * @param [] $features
+     * @return []
+     */
+    public static function addFeatures($id_alert, $features){
+        Db::getInstance()->delete("cd_alert_feature", "id_cd_alert=".(int)$id_alert);
+        if(empty($features)) {
+            return true;
+        }
+
+        $data = array();
+        foreach($features as $id_feature) {
+            if((int)$id_feature) {
+                $data[] = [
+                    'id_cd_alert' => $id_alert,
+                    'id_feature' => $id_feature,
+                ];
+            }
+        }
+        if(empty($data)) {
+            return true;
+        }
+
+        return Db::getInstance()->insert(
+            'cd_alert_feature', $data, false, true, Db::INSERT_IGNORE
+        );
+    }
+
+    /**
+     * @param int $id_alert
+     * @param [] $attributes
+     * @return []
+     */
+    public static function addAttributes($id_alert, $attributes){
+        Db::getInstance()->delete("cd_alert_attribut", "id_cd_alert=".(int)$id_alert);
+        if(empty($attributes)) {
+            return true;
+        }
+        $data = array();
+        foreach($attributes as $id_attribut) {
+            if((int)$id_attribut) {
+                $data[] = [
+                    'id_cd_alert' => $id_alert,
+                    'id_attribut' => $id_attribut,
+                ];
+            }
+        }
+        if(empty($data)) {
+            return true;
+        }
+        return Db::getInstance()->insert(
+            'cd_alert_attribut', $data, false, true, Db::INSERT_IGNORE
+        );
     }
 
     /**
