@@ -111,6 +111,7 @@ class Cd_productalert extends Module
 
         $this->context->smarty->assign(
             array(
+                'cron_link' => $this->context->link->getModuleLink($this->module->name, 'cron'),
                 'module_dir' => $this->_path,
                 'config_form' => $this->config_form,
                 'form' => $this->renderConfigForm(),
@@ -170,6 +171,14 @@ class Cd_productalert extends Module
                     'type' => 'text',
                     'label' => $this->l('Définissez une email de copie'),
                     'name' => 'CD_PRODUCT_ALERT_EMAIL_COPIE',
+                )
+            )
+            ->addField(
+                array(
+                    'type' => 'text',
+                    'label' => $this->l('Sujet du mail envoyer aux clients'),
+                    'name' => 'CD_PRODUCT_ALERT_SUBJECT_MAIL',
+                    'lang' => true,
                 )
             )
             ->addField(
@@ -273,9 +282,11 @@ class Cd_productalert extends Module
         );
 
         foreach ($this->languages as $language) {
-            
             $data['CD_PRODUCT_ALERT_TITLE_PAGE'][$language['id_lang']] =
              Configuration::get('CD_PRODUCT_ALERT_TITLE_PAGE', $language['id_lang']);
+            
+            $data['CD_PRODUCT_ALERT_SUBJECT_MAIL'][$language['id_lang']] =
+             Configuration::get('CD_PRODUCT_ALERT_SUBJECT_MAIL', $language['id_lang']);
         }
 
         
@@ -294,6 +305,7 @@ class Cd_productalert extends Module
         );
         $multilang = array(
             'CD_PRODUCT_ALERT_TITLE_PAGE',
+            'CD_PRODUCT_ALERT_SUBJECT_MAIL'
         );
         if(Tools::isSubmit('submitCdProductAlertConfig')) {
             $form_values = $this->getConfigFormValues();

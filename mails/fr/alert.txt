@@ -1,0 +1,14 @@
+ 
+
+{shop_url}
+
+Salut {firstname} {lastname},
+
+Votre alerte {alert_name} vient de detecter un produit 
+avec les carractéristiques que vous avez demandez.
+
+retrouvez ici le produit en question. [{product_name}]({product_link})
+
+[{shop_name}]({shop_url})
+
+Powered by [PrestaShop](https://www.prestashop.com/?utm_source=marchandprestashop&utm_medium=e-mail&utm_campaign=footer_1-7)

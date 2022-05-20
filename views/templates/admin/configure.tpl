@@ -26,6 +26,13 @@
 
 
 <div class="row">
+{if isset($cron_link) && $cron_link}
+	<p class="alert alert-info">
+		Utilisez ce lien pour configurer le cron permettant d'envoyer les alertes au clients.
+		<em>{$cron_link}</em>
+	</p>
+{/if}
+
 	<div class="col-md-9">
 		<div class="v6-tab-item " id="v6-documentation">
 			<div class="panel">

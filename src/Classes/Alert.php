@@ -32,6 +32,7 @@ use Context;
 use Product;
 use DbQuery;
 use Db;
+use StockAvailable;
 
 class Alert
 {
@@ -289,6 +290,55 @@ class Alert
             false,
             true, Db::REPLACE
         );
+    }
+
+    /**
+     * @param int $id_alert
+     * @param int $id_product
+     * @param int $id_product_attribute
+     * @return bool
+     */
+    public static function setIsAlerted($id_alert, $id_product, $id_product_attribute) {
+        return Db::getInstance()->update(
+            'cd_alert_alerted',
+            [
+                'is_alerted' => 1
+            ], 
+            "id_cd_alert=".$id_alert." AND id_product=".$id_product." AND id_product_attribute=".$id_product_attribute 
+        );
+    }
+
+    /**
+     * Retourne les notifications courante 
+     * @return []
+     */
+    public function getAlertsForNotifications() {
+        $data = [];
+
+        $q = new DbQuery();
+        $q->select('a.*, ca.*, cu.firstname, cu.lastname, cu.email')
+            ->from('cd_alert_alerted', 'a')
+            ->innerJoin('cd_alert', 'ca', 'ca.id_cd_alert=a.id_cd_alert')
+            ->innerJoin('customer', 'cu', 'cu.id_customer=ca.id_customer')
+            ->innerJoin('product', 'p', 'p.id_product=a.id_product')
+            ->where('a.is_alerted=0')
+            ->where('p.active=1')
+        ;
+
+        $data = array_map(function($a){
+            $a['product_quantity'] = StockAvailable::getQuantityAvailableByProduct(
+                $a['id_product'], $a['id_product_attribute']
+            );
+            $a['product_name'] = Product::getProductName(
+                $a['id_product'], $a['id_product_attribute']
+            );
+            $a['product_link'] = Context::getContext()->link->getProductLink(
+                $a['id_product'], null, null, null, null, null, $a['id_product_attribute']
+            );
+            return $a;
+        }, Db::getInstance()->executeS($q));
+
+        return $data;
     }
 
 }
