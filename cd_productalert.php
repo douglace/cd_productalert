@@ -111,7 +111,7 @@ class Cd_productalert extends Module
 
         $this->context->smarty->assign(
             array(
-                'cron_link' => $this->context->link->getModuleLink($this->module->name, 'cron'),
+                'cron_link' => $this->context->link->getModuleLink($this->name, 'cron'),
                 'module_dir' => $this->_path,
                 'config_form' => $this->config_form,
                 'form' => $this->renderConfigForm(),
