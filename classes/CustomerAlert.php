@@ -114,4 +114,16 @@ class CustomerAlert extends ObjectModel
             )
         ),
     );
+
+    public function delete()
+    {
+        $id_alert = $this->id;
+        $delete = parent::delete();
+        if($delete){
+            Db::getInstance()->delete('cd_alert_alerted', 'id_cd_alert='.$id_alert);
+            Db::getInstance()->delete('cd_alert_attribut', 'id_cd_alert='.$id_alert);
+            Db::getInstance()->delete('cd_alert_feature', 'id_cd_alert='.$id_alert);
+        }
+        return $delete;
+    }
 }

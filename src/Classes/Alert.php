@@ -26,13 +26,26 @@
 
 namespace Vex6\CdProductalert\Classes;
 
+if(!class_exists('CustomerAlert'));
+    require_once _PS_MODULE_DIR_.'cd_productalert/classes/CustomerAlert.php';
+
+
 use Vex6\V6Kreabel\Repository;
-use ObjectModel;
+use StockAvailable;
+use AttributeGroup;
+use CustomerAlert;
+use FeatureValue;
+use Manufacturer;
+use Attribute;
+use Validate;
+use Supplier;
 use Context;
 use Product;
+use Feature;
 use DbQuery;
+use Tools;
 use Db;
-use StockAvailable;
+
 
 class Alert
 {
@@ -339,6 +352,95 @@ class Alert
         }, Db::getInstance()->executeS($q));
 
         return $data;
+    }
+
+    /**
+     * @param int $id_alert
+     * @return CustomerAlert|bool
+     */
+    public static function getAlertForView($id_alert) {
+        $context = Context::getContext();
+        $id_lang = $context->language->id;
+        $alert = new CustomerAlert((int)$id_alert);
+        if(Context::getContext()->controller->controller_type == "modulefront") {
+            if(!Validate::isLoadedObject($alert) || $alert->id_customer != $context->customer->id) {
+                return false;
+            }
+        }elseif(!Validate::isLoadedObject($alert)) {
+            return false;
+        }
+        
+
+        $alert->attributes = array_map(function($a)use($id_lang){
+            $attribute = new Attribute($a['id_attribut'], $id_lang);
+            $group = new AttributeGroup($attribute->id_attribute_group, $id_lang);
+            
+            return [
+                'attribute' => $attribute,
+                'group' => $group,
+            ];
+        }, Alert::getAttributes($alert->id));
+        
+        $alert->features = array_map(function($a)use($id_lang){
+            $value = new FeatureValue($a['id_feature'], $id_lang);
+            $feature = new Feature($value->id_feature, $id_lang);
+            return [
+                'value' => $value,
+                'feature' => $feature,
+            ];
+        },  Alert::getFeatures($alert->id));
+
+        if($alert->id_supplier) {
+            $alert->supplier = new Supplier((int)$alert->id_supplier);
+        }
+        if($alert->id_manufacturer) {
+            $alert->manufacturer = new Manufacturer((int)$alert->id_manufacturer);
+        }
+        if($alert->alert_price) {
+            $alert->price = Tools::displayPrice((float)$alert->alert_price, (int)$alert->id_currency);
+        }
+
+        $alert->products = self::getSimilarProducts($alert->id);
+
+        return $alert;
+    }
+
+    /**
+     * @param int $id_alert
+     * @return array
+     */
+    public static function getSimilarProducts($id_alert, $id_lang = null){
+        $id_lang = $id_alert ? $id_alert : Context::getContext()->language->id;
+        $q = new DbQuery();
+        $q->from('cd_alert_alerted', 'a')
+        ->select('a.*')
+        ->innerJoin('product', 'p', 'p.id_product=a.id_product')
+        ->where('p.active=1')
+        ->where('a.id_cd_alert='.$id_alert)
+        ;
+
+        $products = Db::getInstance()->executeS($q);
+        if($products && !empty($products)) {
+            $data = array();
+            $context = Context::getContext();
+            foreach($products as $product){
+                $qty = (int)StockAvailable::getQuantityAvailableByProduct($product['id_product'], $product['id_product_attribute']);
+                
+                if($qty > 0) {
+                    $data[] = [
+                        'qty'=> $qty,
+                        'price'=> Product::getPriceStatic($product['id_product'], true, $product['id_product_attribute']),
+                        'name'=> Product::getProductName($product['id_product'], $product['id_product_attribute']),
+                        'link'=> $context->link->getProductLink($product['id_product'], null, null, null, $id_lang, null, $product['id_product_attribute']),
+                    ];
+                }
+                
+            }
+        }
+        return false;
+
+        
+        
     }
 
 }

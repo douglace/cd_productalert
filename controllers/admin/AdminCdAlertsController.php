@@ -51,121 +51,67 @@ class AdminCdAlertsController extends ModuleAdminController {
         $this->_join = " LEFT JOIN `"._DB_PREFIX_."customer` cu ON cu.id_customer = a.id_customer";
         
         $this->addRowAction('view'); 
-        $this->addRowAction('edit');
         $this->addRowAction('delete'); 
 
         parent::__construct();
 
         $this->bulk_actions = array(
             'delete' => array(
-                'text' => $this->l('Delete selected', [], 'Modules.Kreabelhome.Admin'),
+                'text' => $this->l('Delete selected', [], 'Modules.Cdproductalert.Admincdalertscontroller.php'),
                 'icon' => 'icon-trash',
-                'confirm' => $this->l('Delete selected items?', [], 'Modules.Kreabelhome.Admin')
+                'confirm' => $this->l('Delete selected items?', [], 'Modules.Cdproductalert.Admincdalertscontroller.php')
             )
         );
 
         $this->fields_list = array(
             'id_cd_alert'=>array(
-                'title' => $this->l('ID', [], 'Modules.Kreabelhome.Admin'),
+                'title' => $this->l('ID', [], 'Modules.Cdproductalert.Admincdalertscontroller.php'),
                 'align'=>'center',
                 'class'=>'fixed-width-xs'
             ),
             'email'=>array(
-                'title'=>$this->l('Email', [], 'Modules.Kreabelhome.Admin'),
+                'title'=>$this->l('Email', [], 'Modules.Cdproductalert.Admincdalertscontroller.php'),
                 'width'=>'auto'
             ),
             'alert_name'=>array(
-                'title'=>$this->l('Désignations', [], 'Modules.Kreabelhome.Admin'),
+                'title'=>$this->l('Désignations', [], 'Modules.Cdproductalert.Admincdalertscontroller.php'),
                 'width'=>'auto'
             ),
             'active'=>array(
-                'title'=>$this->l('Etat', [], 'Modules.Kreabelhome.Admin'),
-                'width'=>'auto'
+                'title'=>$this->l('Etat', [], 'Modules.Cdproductalert.Admincdalertscontroller.php'),
+                'width'=>'auto',
+                'callback'=>'alertState',
+            ),
+            'date_add' => array(
+                'title' => $this->trans('Date', array(), 'Modules.Cdproductalert.Admincdalertscontroller.php'),
+                'align' => 'text-right',
+                'type' => 'datetime',
+                'filter_key' => 'a!date_add',
             ),
         );
     }
 
-    public function renderForm()
+    public function alertState($state, $row) {
+        return (int)$state === 0 ?
+        '<span class="bg-warning text-warning">'.$this->l('En attente', [], 'Modules.Cdproductalert.Admincdalertscontroller.php').'</span>' :
+        '<span class="bg-success text-success">'.$this->l('Alerté', [], 'Modules.Cdproductalert.Admincdalertscontroller.php').'</span>' ;
+    }
+
+    public function renderView()
     {
-        if (!($submenu = $this->loadObject(true))) {
-            return;
+        $id_alert = (int)Tools::getValue('id_cd_alert');
+        $alert = Alert::getAlertForView($id_alert);
+        if($alert == false || !Validate::isLoadedObject($alert)) {
+            $alert = null;
+            $this->errors[] = $this->trans('This alert doesn\'t exist', [], 'Modules.Cdproductalert.alert.php');
         }
-
-        $root = Category::getRootCategory();
-        $tree = new HelperTreeCategories('id_category'); 
-        $tree->setUseCheckBox(false)
-            ->setAttribute('id_category', $root->id)
-            ->setRootCategory($root->id)
-            ->setUseSearch(true)
-            ->setSelectedCategories(array((int)$submenu->id_category))
-            ->setInputName('id_category'); //Set the name of input. The option "name" of $fields_form doesn't seem to work with "categories_select" type
+        $this->context->smarty->assign(array(
+            'alert' => $alert));
         
-
-        $this->fields_form = array(
-            'tinymce' => true,
-            'legend' => array(
-                'title' => $this->l('Menu Kreabel', [], 'Modules.Kreabelhome.Admin'),
-                'icon' => 'icon-certificate'
-            ),
-            'input' => array(
-                array(
-                    'type'  => 'categories_select',
-                    'label' => $this->l('Catégory', [], 'Modules.Kreabelhome.Admin'),
-                    'name' => 'id_category',
-                    'category_tree'  => $tree->render(),
-                    'required' => false,
-                    'hint' => $this->l('Invalid characters:', [], 'Modules.Kreabelhome.Admin').' &lt;&gt;;=#{}'
-                ),
-                array(
-                    'type' => 'select',
-                    'label' => $this->l('product', [], 'Modules.Kreabelhome.Admin'),
-                    'name' => 'id_product',
-                    'class' => 'chosen',
-                    'options' => [
-                        'query' => $this->getProducts(),
-                        'id' => 'id',
-                        'name' => 'name',
-                    ],
-                    'hint' => $this->l('Invalid characters:', [], 'Modules.Kreabelhome.Admin').' &lt;&gt;;=#{}'
-                ),
-                array(
-                    'type' => 'text',
-                    'label' => $this->l('Title', [], 'Modules.Kreabelhome.Admin'),
-                    'name' => 'title',
-                    'options' => [
-                        'query' => $this->getProducts(),
-                        'id' => 'id',
-                        'name' => 'name',
-                    ],
-                    'hint' => $this->l('Invalid characters:', [], 'Modules.Kreabelhome.Admin').' &lt;&gt;;=#{}'
-                )
-            )
-        );
-
-        if (!($submenu = $this->loadObject(true))) {
-            return;
-        }
-
-
-        $this->fields_form['submit'] = array(
-            'title' => $this->l('Save', [], 'Modules.Kreabelhome.Admin')
-        );
-
-        return parent::renderForm();
+        return $this->module->fetch('module:'.$this->module->name.'/views/templates/admin/view.tpl');
     }
 
-    public function getProducts() {
-        $q = new DbQuery();
-        $q->select('id_product id, name')
-            ->from('product_lang')
-            ->where('id_lang='.$this->context->language->id)
-        ;
-
-        return Db::getInstance()->executeS($q);
-    }
-
-
-    public function l($string, $params = [], $domaine = 'Modules.Kreabelhome.Admin', $local = null){
+    public function l($string, $params = [], $domaine = 'Modules.Cdproductalert.Admincdalertscontroller.php', $local = null){
         if(_PS_VERSION_ >= '1.7'){
             return $this->module->getTranslator()->trans($string, $params, $domaine, $local);
         }else{

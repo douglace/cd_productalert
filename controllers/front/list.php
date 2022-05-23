@@ -47,41 +47,14 @@ class cd_productalertListModuleFrontController extends ModuleFrontController {
     public function init(){
         parent::init();
         if(Tools::isSubmit('id_alert')){
-            $this->alert = new CustomerAlert((int)Tools::getValue('id_alert'));
+            $id_alert = (int)Tools::getValue('id_alert');
+            $this->alert = Alert::getAlertForView($id_alert);
+            
+            
             if(!Validate::isLoadedObject($this->alert) ||
-            $this->alert->id_customer != $this->context->customer->id) {
+                $this->alert->id_customer != $this->context->customer->id) {
                 $this->alert = null;
                 $this->errors[] = $this->trans('This alert doesn\'t exist', [], 'Modules.Cdproductalert.alert.php');
-            } else {
-                $id_lang = $this->context->language->id;
-                $this->alert->attributes = array_map(function($a)use($id_lang){
-                    $attribute = new Attribute($a['id_attribut'], $id_lang);
-                    $group = new AttributeGroup($attribute->id_attribute_group, $id_lang);
-                    
-                    return [
-                        'attribute' => $attribute,
-                        'group' => $group,
-                    ];
-                }, Alert::getAttributes($this->alert->id));
-                
-                $this->alert->features = array_map(function($a)use($id_lang){
-                    $value = new FeatureValue($a['id_feature'], $id_lang);
-                    $feature = new Feature($value->id_feature, $id_lang);
-                    return [
-                        'value' => $value,
-                        'feature' => $feature,
-                    ];
-                }, 
-                Alert::getFeatures($this->alert->id));
-                if($this->alert->id_supplier) {
-                    $this->alert->supplier = new Supplier((int)$this->alert->id_supplier);
-                }
-                if($this->alert->id_manufacturer) {
-                    $this->alert->manufacturer = new Manufacturer((int)$this->alert->id_manufacturer);
-                }
-                if($this->alert->alert_price) {
-                    $this->alert->price = Tools::displayPrice((float)$this->alert->alert_price, (int)$this->alert->id_currency);
-                }
             }
         }
     }

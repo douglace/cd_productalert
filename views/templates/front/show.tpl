@@ -66,7 +66,40 @@
                 </table>
             </div>
             <div class="col-md-6 col-xs-12">
-                <p class="alert__found-title">{l s='Product similar' d="Modules.Cdproductalert.show"}</p>
+                {if isset($alert->products) && !empty($alert->products)}
+                    <p class="alert__found-title">
+                        {l s='Produits similaires' d="Modules.Cdproductalert.show"}
+                    </p>
+                    <table class="table table-hover table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>{l s='Nom du produit' d="Modules.Cdproductalert.show"}</th>
+                            <th>{l s='Quantité en stock' d="Modules.Cdproductalert.show"}</th>
+                            <th>{l s='Prix de l\'article' d="Modules.Cdproductalert.show"}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {foreach from=$alert->products item=product key=k}
+                            <tr>
+                                <td>
+                                    <a href="{$product.link}" _target="blank">{$product.name}</a>
+                                </td>
+                                <td>
+                                    <em>{$product.qty}</em>
+                                </td>
+                                <td>
+                                    <em>{$product.price}</em>
+                                </td>
+                            </tr>
+                        {/foreach}
+                    </tbody>
+                    
+                </table>
+                {else}
+                    <p class="alert alert-warning">
+                        {l s='Aucun gabarit pour le moment' d="Modules.Cdproductalert.show"}
+                    </p>
+                {/if}
             </div>
         </div>
     </section>
